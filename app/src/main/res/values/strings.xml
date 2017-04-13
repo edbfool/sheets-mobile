@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Sheets</string>
+    <string name="app_name">AlldemSheets</string>
+    <string name="welcome">Welcome to AlldemSheets. This application is a school project bringing the experience of the website www.alldemsheets.com to your mobile.</string>
 </resources>

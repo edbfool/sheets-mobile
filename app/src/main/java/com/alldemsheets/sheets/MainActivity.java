@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -21,6 +22,8 @@ public class MainActivity extends AppCompatActivity {
     public final static String SHEET = "com.alldemsheets.sheets";
     ListView sheetListView;
     ArrayList<String> sheetList = new ArrayList<>();
+    String getParams = "";
+    Button[] buttons = new Button[3];
 
 
     @Override
@@ -28,6 +31,43 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        buttons[0] = (Button) findViewById(R.id.button);
+        buttons[1] = (Button) findViewById(R.id.button2);
+        buttons[2] = (Button) findViewById(R.id.button3);
+
+        for (Button b : buttons){
+            b.setOnClickListener(new View.OnClickListener(){
+                @Override
+                public void onClick(View v){
+                    getParams = ((Button) v).getText().toString();
+                    Toast.makeText(MainActivity.this, getParams, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        newHttp(getParams);
+
+        sheetListView = (ListView) findViewById(R.id.sheetList);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, sheetList);
+        sheetListView.setAdapter(adapter);
+
+        sheetListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String selected = (parent.getItemAtPosition(position).toString());
+                Toast.makeText(MainActivity.this, selected, Toast.LENGTH_SHORT).show();
+
+                Intent newActivity = new Intent(MainActivity.this, IntentActivity.class);
+                newActivity.putExtra(SHEET, selected);
+
+                startActivity(newActivity);
+            }
+        });
+
+    }
+
+    protected void newHttp(String argument){
+        final String arg = argument;
         Thread thread = new Thread(new Runnable(){
             @Override
             public void run(){
@@ -59,22 +99,5 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         thread.start();
-
-        sheetListView = (ListView) findViewById(R.id.sheetList);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, sheetList);
-        sheetListView.setAdapter(adapter);
-
-        sheetListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String selected = (parent.getItemAtPosition(position).toString());
-                Toast.makeText(MainActivity.this, selected, Toast.LENGTH_SHORT).show();
-
-                Intent newActivity = new Intent(MainActivity.this, IntentActivity.class);
-                newActivity.putExtra(SHEET, selected);
-
-                startActivity(newActivity);
-            }
-        });
     }
 }

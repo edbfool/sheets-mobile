@@ -10,13 +10,31 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 public class MainActivity extends AppCompatActivity {
     public final static String SHEET = "com.alldemsheets.sheets";
@@ -30,6 +48,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        testHttps();
         newHttp("");
 
         buttons[0] = (Button) findViewById(R.id.button);
@@ -76,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+
     protected void newHttp(String argument){
         final String arg = argument;
         Thread thread = new Thread(new Runnable(){
@@ -115,5 +136,81 @@ public class MainActivity extends AppCompatActivity {
         sheetListView = (ListView) findViewById(R.id.sheetList);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, sheetList);
         sheetListView.setAdapter(adapter);
+    }
+
+    protected void testHttps(){
+        Thread thread = new Thread(new Runnable(){
+            @Override
+            public void run(){
+                CertificateFactory cf;
+                try {
+                    cf = CertificateFactory.getInstance("X.509");
+                } catch (CertificateException e) {
+                    e.printStackTrace();
+                    cf = null;
+                }
+                InputStream caInput = getResources().openRawResource(R.raw.certification);
+                try {
+                    System.out.println(caInput.available());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Certificate ca = null;
+                try {
+                    //génère le certificat à partir des données brut récupérées dans le fichier .crt
+                    ca = cf.generateCertificate(caInput);
+                    System.out.println("ca="+((X509Certificate) ca).getSubjectDN());
+                } catch (CertificateException e){
+                    System.out.println(e);
+                    try {
+                        if (caInput != null) caInput.close();
+                    } catch (IOException err) {
+                        err.printStackTrace();
+                    }
+                }
+                System.out.println("CERTIFICATE>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                System.out.println(ca);
+                HttpsURLConnection urlConnection = null;
+                try {
+                    String keyStoreType = KeyStore.getDefaultType();
+                    KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+                    keyStore.load(null,null);
+                    keyStore.setCertificateEntry("ca",ca);
+
+                    String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+                    TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+                    tmf.init(keyStore);
+
+
+                    SSLContext context = SSLContext.getInstance("TLS");
+                    context.init(null, tmf.getTrustManagers(), null);
+
+                    URL url = new URL("https://www.alldemsheets.com/kaboum.php");
+                    urlConnection = (HttpsURLConnection)url.openConnection();
+                    urlConnection.setSSLSocketFactory(context.getSocketFactory());
+                    System.out.println( urlConnection.getSSLSocketFactory().);
+                    InputStream in = urlConnection.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+                    String line;
+                    while ((line = reader.readLine()) != null){
+                        System.out.println(line);
+                    }
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                } catch (KeyStoreException e) {
+                    e.printStackTrace();
+                } catch (KeyManagementException e) {
+                    e.printStackTrace();
+                } catch (CertificateException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    urlConnection.disconnect();
+                }
+            }
+        });
+        thread.interrupt();
+        thread.start();
     }
 }

@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        newHttp("");
 
         buttons[0] = (Button) findViewById(R.id.button);
         buttons[1] = (Button) findViewById(R.id.button2);
@@ -39,17 +40,26 @@ public class MainActivity extends AppCompatActivity {
             b.setOnClickListener(new View.OnClickListener(){
                 @Override
                 public void onClick(View v){
+                    String newParams;
                     getParams = ((Button) v).getText().toString();
-                    Toast.makeText(MainActivity.this, getParams, Toast.LENGTH_SHORT).show();
+                    switch(getParams){
+                        case "MOST DOWNLOADED":
+                            newParams = "?type=most";
+                            break;
+                        case "TOP RATED":
+                            newParams = "?type=top";
+                            break;
+                        case "NEWEST":
+                            newParams= "?type=new";
+                            break;
+                        default:
+                            newParams = "";
+                            break;
+                    }
+                    newHttp(newParams);
                 }
             });
         }
-
-        newHttp(getParams);
-
-        sheetListView = (ListView) findViewById(R.id.sheetList);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, sheetList);
-        sheetListView.setAdapter(adapter);
 
         sheetListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -73,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
             public void run(){
                 URL url = null;
                 try {
-                    url = new URL("http://www.alldemsheets.com/mobile.php");
+                    url = new URL("http://www.alldemsheets.com/mobile.php"+arg);
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
@@ -87,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
 
                     BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
                     String line;
+                    sheetList = new ArrayList<>();
                     while ((line = reader.readLine()) != null){
                         System.out.println(line);
                         sheetList.add(line);
@@ -98,6 +109,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        thread.interrupt();
         thread.start();
+
+        sheetListView = (ListView) findViewById(R.id.sheetList);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, sheetList);
+        sheetListView.setAdapter(adapter);
     }
 }

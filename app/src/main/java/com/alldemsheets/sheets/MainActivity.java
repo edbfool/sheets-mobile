@@ -1,6 +1,7 @@
 package com.alldemsheets.sheets;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -19,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -38,19 +40,28 @@ import javax.net.ssl.TrustManagerFactory;
 
 public class MainActivity extends AppCompatActivity {
     public final static String SHEET = "com.alldemsheets.sheets";
-    ListView sheetListView;
     ArrayList<String> sheetList = new ArrayList<>();
     String getParams = "";
     Button[] buttons = new Button[3];
+    ListView sheetListView;
+    ArrayAdapter<String> adapter;
+
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sheetListView = (ListView) findViewById(R.id.sheetList);
+        adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, sheetList);
+        sheetListView.setAdapter(adapter);
+        final newHttpCall runner = new newHttpCall();
 
-        testHttps();
-        newHttp("");
+        //testHttps();
+        //newHttp("");
+
+        runner.execute("http://www.alldemsheets.com/mobile.php");
 
         buttons[0] = (Button) findViewById(R.id.button);
         buttons[1] = (Button) findViewById(R.id.button2);
@@ -58,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
         for (Button b : buttons){
             b.setOnClickListener(new View.OnClickListener(){
+
                 @Override
                 public void onClick(View v){
                     String newParams;
@@ -76,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
                             newParams = "";
                             break;
                     }
-                    newHttp(newParams);
+                    new newHttpCall().execute("http://www.alldemsheets.com/mobile.php"+newParams);
                 }
             });
         }
@@ -96,8 +108,44 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private class newHttpCall extends AsyncTask<String, Integer, ArrayList>{
 
-    protected void newHttp(String argument){
+        @Override
+        protected ArrayList<String> doInBackground(String... strings) {
+            HttpURLConnection urlConnection = null;
+            System.out.println(strings[0]);
+            try {
+                URL url = new URL(strings[0]);
+                urlConnection = (HttpURLConnection) url.openConnection();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                String line;
+                sheetList = new ArrayList<>();
+                while ((line = reader.readLine()) != null){
+                    System.out.println(line);
+                    sheetList.add(line);
+                }
+            }  catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e){
+                e.printStackTrace();
+            } finally {
+                urlConnection.disconnect();
+            }
+            return sheetList;
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList list){
+            adapter.clear();
+            adapter.addAll(list);
+            adapter.notifyDataSetChanged();
+        }
+    }
+
+
+    /*protected void newHttp(String argument){
         final String arg = argument;
         Thread thread = new Thread(new Runnable(){
             @Override
@@ -123,6 +171,7 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println(line);
                         sheetList.add(line);
                     }
+
                 } catch (Exception e){
                     e.printStackTrace();
                 } finally {
@@ -132,11 +181,10 @@ public class MainActivity extends AppCompatActivity {
         });
         thread.interrupt();
         thread.start();
-
-        sheetListView = (ListView) findViewById(R.id.sheetList);
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, sheetList);
-        sheetListView.setAdapter(adapter);
     }
+
+
+
 
     protected void testHttps(){
         Thread thread = new Thread(new Runnable(){
@@ -155,7 +203,9 @@ public class MainActivity extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                Certificate ca = null;
+                Certificate ca =
+
+                newHttpCall runOnTouch = new newHttpCall();null;
                 try {
                     //génère le certificat à partir des données brut récupérées dans le fichier .crt
                     ca = cf.generateCertificate(caInput);
@@ -188,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
                     URL url = new URL("https://www.alldemsheets.com/kaboum.php");
                     urlConnection = (HttpsURLConnection)url.openConnection();
                     urlConnection.setSSLSocketFactory(context.getSocketFactory());
-                    System.out.println( urlConnection.getSSLSocketFactory().);
+                    System.out.println( urlConnection.getSSLSocketFactory());
                     InputStream in = urlConnection.getInputStream();
                     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                     String line;
@@ -212,5 +262,5 @@ public class MainActivity extends AppCompatActivity {
         });
         thread.interrupt();
         thread.start();
-    }
+    }*/
 }

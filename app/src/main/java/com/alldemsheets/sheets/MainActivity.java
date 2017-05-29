@@ -54,8 +54,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sheetListView = (ListView) findViewById(R.id.sheetList);
+
+        ///Instanciation d'un adapter pour lier des données à la listView
         adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, sheetList);
         sheetListView.setAdapter(adapter);
+
+        //instanciation de la classe héritée d'AsyncTasc newHttpCall
         final newHttpCall runner = new newHttpCall();
 
         //testHttps();
@@ -67,6 +71,8 @@ public class MainActivity extends AppCompatActivity {
         buttons[1] = (Button) findViewById(R.id.button2);
         buttons[2] = (Button) findViewById(R.id.button3);
 
+        //Liaison de chacun des boutons à un listener qui déclenchera l'instanciation d'une nouvelle classe newHttpCall
+        //Chacun de ces boutons passe une chaîne de caractère en paramètre qui sera utilisé dans l'URL
         for (Button b : buttons){
             b.setOnClickListener(new View.OnClickListener(){
 
@@ -93,13 +99,16 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        //Liaison d'un listener sur chaque élément de la listView
         sheetListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 String selected = (parent.getItemAtPosition(position).toString());
                 Toast.makeText(MainActivity.this, selected, Toast.LENGTH_SHORT).show();
 
+                //Instanciation d'une nouvelle intention pour ouvrir la deuxième activité
                 Intent newActivity = new Intent(MainActivity.this, IntentActivity.class);
+                //Passage de données dans la nouvelle activité
                 newActivity.putExtra(SHEET, selected);
 
                 startActivity(newActivity);
@@ -108,19 +117,29 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    //Création d'une classe hérité de AsyncTask
     private class newHttpCall extends AsyncTask<String, Integer, ArrayList>{
 
+        //Méthode principal de la classe AsyncTask, c'est celle qui permet d'éxécuter des tâches de fond
         @Override
         protected ArrayList<String> doInBackground(String... strings) {
             HttpURLConnection urlConnection = null;
             System.out.println(strings[0]);
             try {
+                //Instanciation de l'URL grâce aux paramètres passés
                 URL url = new URL(strings[0]);
+
+                //Ouverture de la connexion
                 urlConnection = (HttpURLConnection) url.openConnection();
+
+                //Conversion des données reçues en bytes en chaîne de caractère
                 BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
                 String line;
+
+                //instantiation d'un nouvel ArrayList pour vider les précédentes données
                 sheetList = new ArrayList<>();
                 while ((line = reader.readLine()) != null){
+                    //Pour chaque ligne du reader, l'élément sera ajouté à la fin de l'ArrayList
                     System.out.println(line);
                     sheetList.add(line);
                 }
@@ -136,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
             return sheetList;
         }
 
+        //Méthode appellée après l'éxécution de toutes les tâches de fond réalisées dans doInBackground()
         @Override
         protected void onPostExecute(ArrayList list){
             adapter.clear();
